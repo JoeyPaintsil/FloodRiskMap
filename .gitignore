@@ -1,0 +1,17 @@
+# Node
+node_modules
+dist
+.vercel
+.env
+.env.*
+npm-debug.log*
+yarn-error.log*
+
+# OS/editor
+.DS_Store
+.vscode
+
+# Python
+.venv
+__pycache__/
+*.pyc
