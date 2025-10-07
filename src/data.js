@@ -3,16 +3,16 @@ export const profile = {
   name: "Joseph Paintsil",
   role: "GIS Developer • Remote Sensing Data Scientist",
   blurb: "I build geospatial products that turn satellite pixels into decisions. Specializing in Earth Engine, Python, and ML for environmental monitoring.",
-  location: "Perth, Australia",
-  email: "hello@yourdomain.com",
+  location: "Lisbon, Portugal",
+  email: "paintsil610@gmail.com",
   photo: "/joseph.jpg",
   years: "5+",
   subhead: "I build EO pipelines and decision-ready products.",
   socials: [
-    { label: "GitHub",  href: "https://github.com/yourusername",  icon: "Github" },
-    { label: "LinkedIn", href: "https://linkedin.com/in/yourusername", icon: "Linkedin" },
-    { label: "X",       href: "https://x.com/yourusername",       icon: "Twitter" },
-    { label: "Medium",  href: "https://medium.com/@yourusername",  icon: "PenSquare" }
+    { label: "GitHub",  href: "https://github.com/JoeyPaintsil",  icon: "Github" },
+    { label: "LinkedIn", href: "https://www.linkedin.com/in/joseph-paintsil/", icon: "Linkedin" },
+    // { label: "X",       href: "https://x.com/yourusername",       icon: "Twitter" },
+    // { label: "Medium",  href: "https://medium.com/@yourusername",  icon: "PenSquare" }
   ]
 };
 

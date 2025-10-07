@@ -13,7 +13,7 @@ export default function Navbar(){
   return (
     <header className="sticky top-0 z-50 bg-white/80 backdrop-blur border-b border-slate-200">
       <div className="container-xl flex items-center justify-between h-16">
-        <a href="#" className="font-bold">AB.</a>
+        <a href="#" className="font-bold">JP</a>
         <nav className="hidden md:flex items-center gap-6">
           {nav.map(n => <a key={n.href} href={n.href} className="hover:text-brand-700">{n.label}</a>)}
         </nav>

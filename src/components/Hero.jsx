@@ -14,10 +14,10 @@ export default function Hero(){
           transition={{duration:.6}}
           className="space-y-6"
         >
-          <div className="inline-flex items-center gap-2 chip">
+          {/* <div className="inline-flex items-center gap-2 chip">
             <span className="w-2 h-2 rounded-full bg-green-500"></span>
             Available for projects
-          </div>
+          </div> */}
 
           {/* Name */}
           <h1 className="text-2xl md:text-3xl font-semibold text-brand-700">
