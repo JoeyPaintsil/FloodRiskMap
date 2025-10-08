@@ -1,17 +1,39 @@
-# Node
-node_modules
-dist
-.vercel
+# --- Frontend (Vite/React) ---
+node_modules/
+dist/
+.vite/
+.vercel/
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+
+# --- Python backend ---
+__pycache__/
+*.py[cod]
+*.pyo
+*.pyd
+*.so
+*.egg-info/
+.eggs/
+.pytest_cache/
+
+# --- Env & secrets (DO NOT COMMIT) ---
 .env
 .env.*
-npm-debug.log*
-yarn-error.log*
+server/.env
+server/.env.*
+*.b64.txt
 
-# OS/editor
-.DS_Store
-.vscode
+# If you keep keys in a folder like this, ignore it:
+google_key/
+server/google_key/
 
-# Python
-.venv
-__pycache__/
-*.pyc
+# Common key/cred filenames (belt-and-suspenders)
+*service-account*.json
+*service_account*.json
+*credentials*.json
+*_key.json
+*keyfile*.json
+

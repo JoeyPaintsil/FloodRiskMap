@@ -1,22 +1,25 @@
 # server/main.py
-# Run: uvicorn server.main:app --reload --port 8000
+# Run locally with Docker: uvicorn server.main:app --host 0.0.0.0 --port 8000
 
 import os
 import math
 import time
+import json
+import tempfile
 from typing import Dict, Any, Optional
+from urllib.parse import urljoin
+from pathlib import Path
 
-# --- Clean PROJ/GDAL env on Windows to avoid proj.db conflicts ---
+# Clean PROJ/GDAL env to avoid conflicts on some systems
 for var in ("PROJ_LIB", "GDAL_DATA", "GDAL_DRIVER_PATH", "PROJ_NETWORK"):
     os.environ.pop(var, None)
 try:
-    import pyproj
+    import pyproj  # optional
     os.environ["PROJ_LIB"] = pyproj.datadir.get_data_dir()
 except Exception:
     pass
 
 import ee
-import geemap
 import numpy as np
 import pandas as pd
 import requests
@@ -30,20 +33,31 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
 from fastapi.responses import FileResponse
 from pydantic import BaseModel
-from urllib.parse import urljoin
-from pathlib import Path
 
 # ---------- Config ----------
 BASE_DIR = Path(__file__).resolve().parent            # .../server
 ROOT_DIR = BASE_DIR.parent                            # project root
 
+# REQUIRED CREDENTIALS (set these in your .env / Render env):
+#   EE_PROJECT            = 103526698840                 # <-- your EE project id/number (PUT YOURS)
+#   EE_SA_EMAIL           = ...@....iam.gserviceaccount.com   # <-- your service account email (PUT YOURS)
+#   EE_SA_KEY_JSON_B64    = <base64 of the FULL JSON key>     # <-- preferred (PUT YOURS)
+#   or EE_SA_KEY_JSON     = <FULL JSON key on ONE line>       # <-- optional fallback
 EE_PROJECT = os.getenv("EE_PROJECT")
+EE_SA_EMAIL = os.getenv("EE_SA_EMAIL")
+EE_SA_KEY_JSON = os.getenv("EE_SA_KEY_JSON")              # optional: raw full JSON as a single line
+EE_SA_KEY_JSON_B64 = os.getenv("EE_SA_KEY_JSON_B64")      # preferred: base64 of the full JSON
+
+# Where to read training CSV from
 TRAIN_CSV = os.getenv(
     "TRAIN_CSV",
     str(BASE_DIR / "data" / "gfd_samples_single_event_per_point.csv")
 )
-OUTPUT_DIR = os.getenv("OUTPUT_DIR", str(ROOT_DIR / "outputs"))
+
+# Where to store outputs
+OUTPUT_DIR = os.getenv("OUTPUT_DIR", "/tmp/outputs")
 os.makedirs(OUTPUT_DIR, exist_ok=True)
+
 YEAR_DEFAULT = 2018
 DIMENSIONS_DEFAULT = 1024  # PNG render size
 
@@ -56,16 +70,21 @@ LABEL_COL = "label"
 # ---------- FastAPI ----------
 app = FastAPI(title="Flood Mapper API (GAUL support)", version="1.2.0")
 app.add_middleware(
-    CORSMiddleware, allow_origins=["*"], allow_credentials=True,
-    allow_methods=["*"], allow_headers=["*"],
+    CORSMiddleware,
+    allow_origins=["*"],  # set to your Vercel domain(s) for stricter security in production
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
 )
 app.mount("/files", StaticFiles(directory=OUTPUT_DIR), name="files")
 
 @app.get("/")
-def root(): return {"ok": True, "msg": "See POST /predict, POST /resolve_area"}
+def root():
+    return {"ok": True, "msg": "See POST /predict, POST /resolve_area"}
 
 @app.get("/health")
-def health(): return {"ok": True}
+def health():
+    return {"ok": True}
 
 @app.get("/files/{filename}")
 def get_file(filename: str):
@@ -74,13 +93,45 @@ def get_file(filename: str):
         raise HTTPException(404, "File not found")
     return FileResponse(path)
 
-# ---------- EE init ----------
-def init_ee():
+# ---------- EE init with Service Account ----------
+def init_ee_with_service_account():
+    if not EE_PROJECT or not EE_SA_EMAIL or not (EE_SA_KEY_JSON_B64 or EE_SA_KEY_JSON):
+        raise RuntimeError("Missing EE_PROJECT, EE_SA_EMAIL, or key env (EE_SA_KEY_JSON_B64 or EE_SA_KEY_JSON).")
+
+    # Prefer base64 (best for .env files). Fallback to raw JSON string.
+    if EE_SA_KEY_JSON_B64:
+        import base64
+        try:
+            key_json_text = base64.b64decode(EE_SA_KEY_JSON_B64).decode("utf-8")
+        except Exception as e:
+            raise RuntimeError(f"Could not base64-decode EE_SA_KEY_JSON_B64: {e}")
+    else:
+        key_json_text = EE_SA_KEY_JSON
+
+    # Guard against pasting only the private_key block by mistake
+    if key_json_text.strip().startswith("-----BEGIN"):
+        raise RuntimeError("EE key must be the FULL service-account JSON, not just the private_key block.")
+
+    # Validate JSON and required fields
     try:
-        ee.Initialize(project=EE_PROJECT)
-    except Exception:
-        geemap.ee_initialize(project=EE_PROJECT)
-init_ee()
+        data = json.loads(key_json_text)
+        if not isinstance(data, dict) or "client_email" not in data or "private_key" not in data:
+            raise ValueError("Not a valid service account JSON.")
+    except Exception as e:
+        raise RuntimeError(f"Service account JSON is invalid: {e}")
+
+    key_path = os.path.join(tempfile.gettempdir(), "ee-key.json")
+    with open(key_path, "w", encoding="utf-8") as f:
+        f.write(key_json_text)
+
+    creds = ee.ServiceAccountCredentials(EE_SA_EMAIL, key_path)
+    ee.Initialize(credentials=creds, project=EE_PROJECT)
+
+try:
+    init_ee_with_service_account()
+except Exception as e:
+    # Surface the error early so you know to set env vars correctly
+    raise RuntimeError(f"Earth Engine init failed: {e!r}")
 
 # ---------- Helpers ----------
 def _row_to_feature(row: Dict[str, Any]) -> ee.Feature:
@@ -212,7 +263,6 @@ class ResolveAreaOut(BaseModel):
 
 # ---------- GAUL resolvers ----------
 def _load_gaul(level: int) -> ee.FeatureCollection:
-    """Try standard GAUL first, then simplified."""
     sources = [
         f"FAO/GAUL/2015/level{level}",
         f"FAO/GAUL_SIMPLIFIED_500m/2015/level{level}",
@@ -227,18 +277,11 @@ def _load_gaul(level: int) -> ee.FeatureCollection:
     raise RuntimeError(f"GAUL level{level} dataset not available: {last_err}")
 
 def resolve_named_area_geom(named: dict) -> ee.Geometry:
-    """
-    named = { level: "region"|"district", name: str, country: str }
-    """
     if not named or "level" not in named or "name" not in named or "country" not in named:
         raise HTTPException(400, "Invalid named_area payload. Expect {level,name,country}.")
-
     level = str(named["level"]).lower().strip()
     name = str(named["name"]).strip()
     country = str(named["country"]).strip()
-
-    print("Named area from client:", named)
-
     if level == "region":
         fc = _load_gaul(1)
         feats = (fc.filter(ee.Filter.eq("ADM0_NAME", country))
@@ -249,11 +292,9 @@ def resolve_named_area_geom(named: dict) -> ee.Geometry:
                    .filter(ee.Filter.eq("ADM2_NAME", name)))
     else:
         raise HTTPException(400, "named_area.level must be 'region' or 'district'.")
-
     if ee.Number(feats.size()).getInfo() == 0:
         raise HTTPException(404, f"GAUL feature not found for {level} '{name}' in {country}.")
-
-    return feats.geometry()  # unioned geometry
+    return feats.geometry()
 
 # ---------- PNG fetch with retry/downscale ----------
 def _fetch_png_with_retries(visual_img, region, dims, max_retries=3):
@@ -263,34 +304,28 @@ def _fetch_png_with_retries(visual_img, region, dims, max_retries=3):
             "region": region,
             "dimensions": int(dims),
             "format": "png",
-            "backgroundColor": "00000000",  # transparent background
+            "backgroundColor": "00000000",
         }
         url = visual_img.getThumbURL(params)
         r = requests.get(url, timeout=180)
         if r.status_code == 200:
             return r.content, int(dims)
-
         txt = r.text or ""
         if r.status_code == 400 and "User memory limit" in txt and attempt < max_retries:
             dims = max(128, int(dims) // 2)
             attempt += 1
             continue
-
         raise RuntimeError(f"EE PNG download failed: {r.status_code} {txt[:200]}")
 
 # ---------- Helper for client-side AOI preview ----------
 @app.post("/resolve_area", response_model=ResolveAreaOut)
 def resolve_area(req: ResolveAreaBody):
-    """
-    Return GAUL geometry + bounds so the client can draw the AOI outline
-    as soon as a region/district is selected.
-    """
     try:
         geom = resolve_named_area_geom(req.named_area)
         bcoords = geom.bounds().coordinates().getInfo()[0]
         lons = [c[0] for c in bcoords]; lats = [c[1] for c in bcoords]
         minx, maxx = min(lons), max(lons); miny, maxy = min(lats), max(lats)
-        gjson = geom.getInfo()  # pure Geometry JSON
+        gjson = geom.getInfo()
         return ResolveAreaOut(bounds={"minx": minx, "miny": miny, "maxx": maxx, "maxy": maxy}, geojson=gjson)
     except HTTPException:
         raise
@@ -305,25 +340,20 @@ def predict(req: PredictBody, request: Request):
         year = int(req.year or YEAR_DEFAULT)
         dims = int(req.dimensions or DIMENSIONS_DEFAULT)
 
-        # Decide AOI: uploaded polygon OR GAUL named area
         if req.aoi_coords:
-            print("AOI coords from client (first 3):", req.aoi_coords[:3], "...")
-            uploaded_aoi = ee.Geometry.Polygon([req.aoi_coords])  # wrap ring -> polygon
+            uploaded_aoi = ee.Geometry.Polygon([req.aoi_coords])
             region_geom = uploaded_aoi
         elif req.named_area:
             region_geom = resolve_named_area_geom(req.named_area)
         else:
             raise HTTPException(400, "Provide either aoi_coords or named_area.")
 
-        # Predict over region
         pred_img = predictor_image(region_geom, year)
-        classified = pred_img.classify(CLASSIFIER).rename("flood_pred")  # 0/1
+        classified = pred_img.classify(CLASSIFIER).rename("flood_pred")  # 0 or 1
 
-        # Flood-only bright red PNG (transparent elsewhere)
         flood_only = classified.eq(1).selfMask()
         vis_img = flood_only.visualize(min=0, max=1, palette=["ff0000"])
 
-        # Download PNG to ./outputs (with retry/downscale)
         ts = int(time.time())
         png_name = f"flood_pred_{ts}.png"
         tif_name = f"flood_pred_{ts}.tif"
@@ -334,22 +364,20 @@ def predict(req: PredictBody, request: Request):
         with open(png_path, "wb") as f:
             f.write(png_bytes)
 
-        # AOI bounds (for placing overlay on client)
         bounds = ee.Geometry(region_geom).bounds()
         coords = bounds.coordinates().getInfo()[0]
         lons = [c[0] for c in coords]; lats = [c[1] for c in coords]
         minx, maxx = min(lons), max(lons); miny, maxy = min(lats), max(lats)
 
-        # Convert flood-only PNG (red opaque, else transparent) → binary GeoTIFF
         with Image.open(png_path) as im:
             im = im.convert("RGBA")
             width, height = im.size
             rgba = np.array(im)
 
         alpha = rgba[:, :, 3]
-        flooded = alpha > 0  # any visible pixel == flood
+        flooded = alpha > 0
         out_arr = np.zeros((height, width), dtype=np.uint8)
-        out_arr[flooded] = 1  # 1 = flood, 0 = not flood
+        out_arr[flooded] = 1  # 1 = flood
 
         transform = from_bounds(minx, miny, maxx, maxy, width, height)
         profile = {
@@ -365,7 +393,7 @@ def predict(req: PredictBody, request: Request):
         with rasterio.open(tif_path, "w", **profile) as dst:
             dst.write(out_arr, 1)
 
-        base = str(request.base_url)   # e.g. http://localhost:8000/
+        base = str(request.base_url)  # e.g. http://localhost:8000/
         return PredictOut(
             png_url=urljoin(base, f"files/{png_name}"),
             tif_url=urljoin(base, f"files/{tif_name}"),
