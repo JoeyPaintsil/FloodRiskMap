@@ -65,9 +65,9 @@ export const projects = [
 
 export const experience = [
   {
-    org: "Tripoint Geoconsult",
-    role: "GIS Developer",
-    period: "2023 — Present",
+    org: "Abeya",
+    role: "Remote Sensing Data Scientist",
+    period: "April 2024 - Present",
     bullets: [
       "Built EO pipelines in GEE for classification and biomass mapping",
       "Delivered dashboards and reproducible analysis for clients",
