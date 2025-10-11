@@ -19,7 +19,7 @@ try:
 except Exception:
     pass
 
-import ee
+import  ee
 import numpy as np
 import pandas as pd
 import requests
