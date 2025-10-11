@@ -3,49 +3,36 @@ import { motion } from "framer-motion";
 import { profile } from "../data";
 import * as Icons from "lucide-react";
 
-export default function Hero(){
+export default function Hero() {
   return (
     <section className="section">
       <div className="container-xl grid md:grid-cols-2 gap-10 items-center">
         {/* Left: text */}
         <motion.div
-          initial={{opacity:0, y:10}}
-          animate={{opacity:1, y:0}}
-          transition={{duration:.6}}
-          className="space-y-6"
+          initial={{ opacity: 0, y: 10 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.6 }}
+          className="space-y-5 md:space-y-6"
         >
-          {/* <div className="inline-flex items-center gap-2 chip">
-            <span className="w-2 h-2 rounded-full bg-green-500"></span>
-            Available for projects
-          </div> */}
-
-          {/* Name */}
-          <h1 className="text-2xl md:text-3xl font-semibold text-brand-700">
-            {profile.name}
+          <h1 className="text-4xl md:text-5xl font-extrabold text-slate-900 leading-snug">
+            <span className="block">
+              Hello  I'm
+            </span>
+            <span className="block">
+             <span className="block mt-2 text-brand-700">{profile.name}</span>
+            </span>
           </h1>
 
-          {/* Role / Title */}
-          <h2 className="text-4xl md:text-5xl font-extrabold leading-tight text-slate-900">
-            Remote Sensing Data Scientist
-          </h2>
+          {/* use blurb from profile */}
+          <p className="text-lg text-slate-600 max-w-[46ch] text-justify">{profile.blurb}</p>
 
-
-          <p className="text-lg text-slate-600">{profile.blurb}</p>
-
-          {/* Primary actions */}
           <div className="flex flex-wrap gap-3">
-           <a href="/flood-mapper" className="btn btn-primary">
-              View my latest project!
-          </a>
-
-            <a href="#contact" className="btn">
-              Contact Me
-            </a>
+            <a href="/flood-mapper" className="btn btn-primary">View my latest project</a>
+            <a href="#contact" className="btn">Contact Me</a>
           </div>
 
-          {/* Socials with icons */}
           <div className="flex flex-wrap gap-3">
-            {profile.socials.map(s => {
+            {profile.socials.map((s) => {
               const Icon = Icons[s.icon] || Icons.Circle;
               return (
                 <a
@@ -63,14 +50,14 @@ export default function Hero(){
           </div>
         </motion.div>
 
-        {/* Right: visual */}
+        {/* Map visual */}
         <motion.div
-          initial={{opacity:0, scale:.96}}
-          animate={{opacity:1, scale:1}}
-          transition={{duration:.6, delay:.1}}
-          className="card p-6 aspect-square md:aspect-[4/3] flex items-center justify-center"
+          initial={{ opacity: 0, scale: 0.96 }}
+          animate={{ opacity: 1, scale: 1 }}
+          transition={{ duration: 0.6, delay: 0.1 }}
+          className="card p-0 overflow-hidden aspect-square md:aspect-[4/3]"
         >
-          <img src="/hero-map.png" alt="Map preview" className="rounded-xl object-cover" />
+          <img src="/hero-map.png" alt="Map preview" className="w-full h-full object-cover" />
         </motion.div>
       </div>
     </section>

@@ -1,20 +1,20 @@
 // src/data.js
 export const profile = {
   name: "Joseph Paintsil",
-  role: "GIS Developer • Remote Sensing Data Scientist",
-  blurb: "I build geospatial products that turn satellite pixels into decisions. Specializing in Earth Engine, Python, and ML for environmental monitoring.",
+  blurb:
+    "I’m a geospatial data scientist who works across remote sensing, GIS, and machine learning. I also design and develop websites and interactive geospatial dashboards that make data easy to explore and understand. If you share these interests, connect with me on LinkedIn below.",
   location: "Lisbon, Portugal",
   email: "paintsil610@gmail.com",
-  photo: "/joseph.jpg",
+  photo: "./public/joseph2.png",
   years: "5+",
-  subhead: "I build EO pipelines and decision-ready products.",
+  subhead: "Exploring data, maps, and technology to make complex information easier to see and use.",
   socials: [
-    { label: "GitHub",  href: "https://github.com/JoeyPaintsil",  icon: "Github" },
+    { label: "GitHub", href: "https://github.com/JoeyPaintsil", icon: "Github" },
     { label: "LinkedIn", href: "https://www.linkedin.com/in/joseph-paintsil/", icon: "Linkedin" },
-    // { label: "X",       href: "https://x.com/yourusername",       icon: "Twitter" },
-    // { label: "Medium",  href: "https://medium.com/@yourusername",  icon: "PenSquare" }
-  ]
+  ],
 };
+
+
 
 
 export const stats = [
