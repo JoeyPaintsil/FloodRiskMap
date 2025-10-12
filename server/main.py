@@ -19,7 +19,7 @@ try:
 except Exception:
     pass
 
-import  ee
+import ee
 import numpy as np
 import pandas as pd
 import requests
@@ -48,10 +48,15 @@ EE_SA_EMAIL = os.getenv("EE_SA_EMAIL")
 EE_SA_KEY_JSON = os.getenv("EE_SA_KEY_JSON")              # optional: raw full JSON as a single line
 EE_SA_KEY_JSON_B64 = os.getenv("EE_SA_KEY_JSON_B64")      # preferred: base64 of the full JSON
 
-# Where to read training CSV from
+# --------------------------------------------------------------------
+# IMPORTANT: point this to your training CSV (same as your notebook):
+# Set TRAIN_CSV in environment, e.g.
+#   TRAIN_CSV=/absolute/path/to/Geomundus_Training_Points_v1.csv
+# Fallback default below if env var not set
+# --------------------------------------------------------------------
 TRAIN_CSV = os.getenv(
     "TRAIN_CSV",
-    str(BASE_DIR / "data" / "gfd_samples_single_event_per_point.csv")
+    str(BASE_DIR / "data" / "Geomundus_Training_Points_v1.csv")
 )
 
 # Where to store outputs
@@ -61,14 +66,17 @@ os.makedirs(OUTPUT_DIR, exist_ok=True)
 YEAR_DEFAULT = 2018
 DIMENSIONS_DEFAULT = 1024  # PNG render size
 
-FEATURE_COLS = [
-    "rainfall_mm", "ndvi", "lulc_igbp", "elevation", "slope",
+# NEW: feature schema now uses base features + one-hot LULC (Dynamic World)
+BASE_FEATURES = [
+    "rainfall_mm", "ndvi", "elevation", "slope",
     "curvature_profile", "twi", "drainage_density", "dist_to_water"
 ]
+LULC_BANDS = [f"lulc_{i}" for i in range(9)]  # DW classes 0..8 one-hot
+FEATURE_COLS = BASE_FEATURES + LULC_BANDS
 LABEL_COL = "label"
 
 # ---------- FastAPI ----------
-app = FastAPI(title="Flood Mapper API (GAUL support)", version="1.2.0")
+app = FastAPI(title="Flood Mapper API (GAUL support)", version="1.3.0")
 app.add_middleware(
     CORSMiddleware,
     allow_origins=["*"],  # set to your Vercel domain(s) for stricter security in production
@@ -109,7 +117,7 @@ def init_ee_with_service_account():
         key_json_text = EE_SA_KEY_JSON
 
     # Guard against pasting only the private_key block by mistake
-    if key_json_text.strip().startswith("-----BEGIN"):
+    if key_json_text and key_json_text.strip().startswith("-----BEGIN"):
         raise RuntimeError("EE key must be the FULL service-account JSON, not just the private_key block.")
 
     # Validate JSON and required fields
@@ -134,20 +142,6 @@ except Exception as e:
     raise RuntimeError(f"Earth Engine init failed: {e!r}")
 
 # ---------- Helpers ----------
-def _row_to_feature(row: Dict[str, Any]) -> ee.Feature:
-    return ee.Feature(None, {
-        "rainfall_mm": float(row["rainfall_mm"]),
-        "ndvi": float(row["ndvi"]),
-        "lulc_igbp": int(row["lulc_igbp"]),
-        "elevation": float(row["elevation"]),
-        "slope": float(row["slope"]),
-        "curvature_profile": float(row["curvature_profile"]),
-        "twi": float(row["twi"]),
-        "drainage_density": float(row["drainage_density"]),
-        "dist_to_water": float(row["dist_to_water"]),
-        "label": int(row["label"]),
-    })
-
 jrc_occurrence = ee.Image("JRC/GSW1_4/GlobalSurfaceWater").select("occurrence")
 
 def rainfall_sum_year(year: int):
@@ -172,19 +166,13 @@ def ndvi_mean_year(year: int, region: ee.Geometry):
                                      ndvi_modis_mean_year(year, region),
                                      ndvi_s2_mean_year(year, region)))
 
-def modis_lulc_year(year: int, region: ee.Geometry):
-    yc = ee.Number(year).max(2001).min(2020)
-    start = ee.Date.fromYMD(yc, 1, 1); end = ee.Date.fromYMD(yc, 12, 31)
-    img = ee.ImageCollection("MODIS/006/MCD12Q1").filterDate(start, end).filterBounds(region).select("LC_Type1").first()
-    return ee.Image(img).rename("lulc_igbp")
-
 def profile_curvature_from_dem(dem: ee.Image):
     proj = dem.projection(); scale = ee.Number(proj.nominalScale())
     dx = dem.convolve(ee.Kernel.fixed(3, 3, [[-1,0,1],[-2,0,2],[-1,0,1]], 1, 1, False)).divide(ee.Number(8).multiply(scale))
     dy = dem.convolve(ee.Kernel.fixed(3, 3, [[-1,-2,-1],[0,0,0],[1,2,1]], 1, 1, False)).divide(ee.Number(8).multiply(scale))
     dxx = dem.convolve(ee.Kernel.fixed(3, 3, [[1,-2,1],[2,-4,2],[1,-2,1]], 1, 1, False)).divide(ee.Number(6).multiply(scale.pow(2)))
     dyy = dem.convolve(ee.Kernel.fixed(3, 3, [[1,2,1],[-2,-4,-2],[1,2,1]], 1, 1, False)).divide(ee.Number(6).multiply(scale.pow(2)))
-    dxy = dem.convolve(ee.Kernel.fixed(3, 3, [[1,0,-1],[0,0,0],[-1,0,1]], 1, 1, False)).divide(ee.Number(4).multiply(scale.pow(2)))
+    dxy = dem.convolve(ee.Kernel.fixed(3, 3, [[1,0,-1],[0,0,0],[1,0,1]], 1, 1, False)).divide(ee.Number(4).multiply(scale.pow(2)))
     p, q, r, t, s = dx, dy, dxx, dyy, dxy
     denom = p.multiply(p).add(q.multiply(q)).add(1).pow(1.5)
     return (r.multiply(p.pow(2)).add(t.multiply(q.pow(2))).add(s.multiply(2).multiply(p).multiply(q))).divide(denom).rename("curvature_profile")
@@ -197,6 +185,7 @@ def build_static_stack(region: ee.Geometry):
     tan_slope = slope.multiply(math.pi / 180).tan().max(0.001)
     cell_area = 90 * 90
     twi = upa.multiply(cell_area).divide(tan_slope).add(1).log().rename("twi")
+    # drainage density via local kernel around streams threshold (match your prod logic)
     stream_threshold = 1000
     streams = upa.gt(stream_threshold)
     pixel_size = 90
@@ -205,38 +194,107 @@ def build_static_stack(region: ee.Geometry):
     kernel = ee.Kernel.circle(kernel_radius_px, units="pixels", normalize=False)
     stream_density_pixels = streams.convolve(kernel)
     dd = stream_density_pixels.multiply(pixel_size).divide((kernel_radius_m ** 2) / 1e6).rename("drainage_density")
+    # distance to permanent water (JRC)
     water_perm = jrc_occurrence.clip(region).gt(90)
     dist_to_water = water_perm.Not().fastDistanceTransform(30).sqrt().multiply(30).rename("dist_to_water")
     return ee.Image.cat([dem, slope, curv, twi, dd, dist_to_water]).clip(region)
 
+# ---------- Predictor image (now uses Dynamic World one-hot) ----------
 def predictor_image(region: ee.Geometry, year: int):
+    # Continuous features (same as prod)
     rain_img = rainfall_sum_year(year).clip(region)
     ndvi_img = ndvi_mean_year(year, region).clip(region)
-    lulc_img = modis_lulc_year(year, region).clip(region).toInt()
     static_stack = build_static_stack(region)
-    predictor_img = ee.Image.cat([rain_img, ndvi_img, lulc_img, static_stack]).select(FEATURE_COLS)
-    dem_proj = ee.Image("NASA/NASADEM_HGT/001").select("elevation").projection()
-    continuous = predictor_img.select([
-        "rainfall_mm","ndvi","elevation","slope",
-        "curvature_profile","twi","drainage_density","dist_to_water"
-    ]).resample("bilinear").reproject(dem_proj)
-    lulc_nearest = predictor_img.select("lulc_igbp").reproject(dem_proj)
-    return ee.Image.cat([continuous, lulc_nearest]).select(FEATURE_COLS)
+    continuous = ee.Image.cat([
+        rain_img, ndvi_img, static_stack  # rainfall_mm, ndvi, elevation, slope, curvature_profile, twi, drainage_density, dist_to_water
+    ])
 
-# ---------- Train RF ONCE ----------
-def train_classifier():
+    # Dynamic World LULC → one-hot 0..8 to match training from CSV
+    start = ee.Date.fromYMD(year, 1, 1); end = ee.Date.fromYMD(year, 12, 31)
+    dw_label = (ee.ImageCollection("GOOGLE/DYNAMICWORLD/V1")
+                .filterBounds(region)
+                .filterDate(start, end)
+                .select("label")
+                .mode()
+                .clip(region))
+    lulc_dummies = ee.Image.cat([dw_label.eq(i).rename(f"lulc_{i}") for i in range(9)]).toFloat()
+
+    # Reproject continuous to DEM projection; keep LULC nearest
+    dem_proj = ee.Image("NASA/NASADEM_HGT/001").select("elevation").projection()
+    cont_res = (continuous
+                .select([
+                    "rainfall_mm","ndvi","elevation","slope",
+                    "curvature_profile","twi","drainage_density","dist_to_water"
+                ])
+                .resample("bilinear").reproject(dem_proj))
+
+    # final stack ordered as FEATURE_COLS
+    out = ee.Image.cat([cont_res, lulc_dummies]).select(FEATURE_COLS)
+    return out
+
+# ---------- Train RF in EE using CSV with lulc_dw one-hot on-server ----------
+def train_classifier_from_csv():
     if not os.path.exists(TRAIN_CSV):
         raise RuntimeError(f"Training CSV not found at {TRAIN_CSV}")
+
+    # Expect columns: BASE_FEATURES + 'lulc_dw' + 'label' (as saved from your sampling step)
     df = pd.read_csv(TRAIN_CSV)
-    df_use = df[FEATURE_COLS + [LABEL_COL]].dropna().copy()
+    required = BASE_FEATURES + ["lulc_dw", LABEL_COL]
+    missing = [c for c in required if c not in df.columns]
+    if missing:
+        raise RuntimeError(f"CSV missing required columns: {missing}")
+
+    df_use = df[required].dropna().copy()
+    df_use["lulc_dw"] = df_use["lulc_dw"].astype(int)
+    df_use[LABEL_COL] = df_use[LABEL_COL].astype(int)
+
+    # Push to EE (no geometry). One-hot encode lulc_dw server-side.
+    def _row_to_feature(row: Dict[str, Any]) -> ee.Feature:
+        props = {}
+        for k in BASE_FEATURES:
+            props[k] = float(row[k])
+        props["lulc_dw"] = int(row["lulc_dw"])
+        props[LABEL_COL] = int(row[LABEL_COL])
+        return ee.Feature(None, props)
+
     feats = [_row_to_feature(r) for r in df_use.to_dict("records")]
-    fc = ee.FeatureCollection(feats).randomColumn('rand', 42)
-    train_fc = fc.filter(ee.Filter.lt('rand', 0.8))
-    clf = (ee.Classifier.smileRandomForest(numberOfTrees=300, minLeafPopulation=2, seed=42)
-           .train(features=train_fc, classProperty=LABEL_COL, inputProperties=FEATURE_COLS))
+    fc = ee.FeatureCollection(feats)
+
+    # one-hot lulc on server
+    def add_lulc_dummies(feat):
+        lulc = ee.Number(feat.get("lulc_dw")).toInt()
+        d = ee.Dictionary.fromLists(
+            LULC_BANDS,
+            [lulc.eq(i) for i in range(9)]
+        )
+        return feat.set(d)
+
+    fc_encoded = fc.map(add_lulc_dummies)
+
+    # final input properties
+    input_props = FEATURE_COLS
+
+    # 70/30 split and train
+    split = fc_encoded.randomColumn("rand", 42)
+    train_fc = split.filter(ee.Filter.lt("rand", 0.7))
+    # (You can also compute test metrics if desired)
+
+    clf = (ee.Classifier.smileRandomForest(
+              numberOfTrees=300,
+              minLeafPopulation=2,
+              seed=42
+          ).train(
+              features=train_fc,
+              classProperty=LABEL_COL,
+              inputProperties=input_props
+          ))
+
     return clf
 
-CLASSIFIER = train_classifier()
+# Train once at startup (same production pattern)
+CLASSIFIER = train_classifier_from_csv()
+# (Optionally keep a probability variant if you ever need it)
+CLASSIFIER_PROB = CLASSIFIER.setOutputMode("PROBABILITY")
 
 # ---------- Schemas ----------
 class PredictBody(BaseModel):
@@ -348,9 +406,13 @@ def predict(req: PredictBody, request: Request):
         else:
             raise HTTPException(400, "Provide either aoi_coords or named_area.")
 
+        # Build predictors (now DW one-hot + base features)
         pred_img = predictor_image(region_geom, year)
+
+        # Classify exactly like production (binary 0/1), to keep your flow unchanged
         classified = pred_img.classify(CLASSIFIER).rename("flood_pred")  # 0 or 1
 
+        # Visualize (same style as production logic; red mask)
         flood_only = classified.eq(1).selfMask()
         vis_img = flood_only.visualize(min=0, max=1, palette=["ff0000"])
 
