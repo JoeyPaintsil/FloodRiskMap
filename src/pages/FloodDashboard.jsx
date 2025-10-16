@@ -199,7 +199,7 @@ export default function FloodDashboard() {
       const map = mapInstanceRef.current;
       if (!map) return;
 
-      // Uploaded AOI takes precedence; clear named-area selection
+    // Uploaded AOI takes precedence; clear named-area selection
       aoiGeoJsonRef.current = geo;
       selectedAreaRef.current = null;
 
@@ -437,6 +437,47 @@ export default function FloodDashboard() {
   const cycleBasemap = () =>
     setBasemap((b) => (b === "osm" ? "sat" : b === "sat" ? "topo" : "osm"));
 
+  // -------- Progress text rotation (every 10s while running) --------
+  // useEffect(() => {
+  //   if (status !== "running") return;
+  //   const msgs = ["Fetching Flood Parameters...", "Training Machine Learning Model...", "Determining AOI...", "Predicting Flood Risk..."];
+  //   let i = 0;
+  //   setStep(msgs[i]);
+  //   const iv = setInterval(() => {
+  //     i = (i + 1) % msgs.length;
+  //     setStep(msgs[i]);
+  //   }, 10000);
+  //   return () => clearInterval(iv);
+  // }, [status]);
+
+  useEffect(() => {
+  if (status !== "running") return;
+
+  const msgs = [
+    "Fetching Flood Parameters...",
+    "Training Machine Learning Model...",
+    "Determining AOI...",
+    "Predicting Flood Risk..."
+  ];
+
+  let i = 0;
+  setStep(msgs[i]);
+
+  const iv = setInterval(() => {
+    i += 1;
+
+    // If we reached the last message, set it and stop the interval
+    if (i >= msgs.length - 1) {
+      setStep(msgs[msgs.length - 1]);
+      clearInterval(iv);
+    } else {
+      setStep(msgs[i]);
+    }
+  }, 10000);
+
+  return () => clearInterval(iv);
+}, [status]);
+
   return (
     <section className="relative h-[100vh] bg-slate-900">
       {/* Map */}
@@ -528,12 +569,23 @@ export default function FloodDashboard() {
       {/* Progress pill — small; no fullscreen overlay */}
       {(status === "running" || status === "done") && (
         <div className="pointer-events-none absolute md:top-20 top-auto bottom-24 left-1/2 -translate-x-1/2 z-30">
-          <div className="bg-slate-800/95 text-white px-3 md:px-4 py-2 rounded-lg shadow-soft flex items-center gap-2 md:gap-3 max-w-[min(90vw,520px)]">
-            <div className="w-36 md:w-48 h-2 bg-slate-600 rounded">
-              <div className="h-2 bg-emerald-400 rounded" style={{ width: `${progress}%` }} />
-            </div>
-            <span className="text-xs md:text-sm whitespace-nowrap">{step || "Working..."}</span>
-            <span className="text-xs md:text-sm opacity-80">{progress}%</span>
+          <div className="bg-slate-800/95 text-white px-3 md:px-4 py-2 rounded-lg shadow-soft flex items-center gap-3 md:gap-4 max-w-[min(90vw,520px)]">
+            {status === "running" ? (
+              <>
+                {/* circular spinner */}
+                <span className="inline-block w-5 h-5 md:w-6 md:h-6 rounded-full border-2 md:border-2 border-slate-600 border-t-emerald-400 animate-spin" />
+                <span className="text-xs md:text-sm whitespace-nowrap">
+                  {step || "Working..."}
+                </span>
+              </>
+            ) : (
+              <>
+                <span className="text-xs md:text-sm whitespace-nowrap">
+                  Prediction complete
+                </span>
+                <span className="text-xs md:text-sm opacity-80">100%</span>
+              </>
+            )}
           </div>
         </div>
       )}
@@ -550,23 +602,23 @@ export default function FloodDashboard() {
               <div className="flex flex-col gap-1 text-xs md:text-sm text-slate-700">
                 <div className="flex items-center gap-2">
                   <span className="inline-block w-3 h-3 md:w-4 md:h-4 rounded-sm" style={{ background: "#22c55e" }} />
-                  0.0 – 0.2 · No risk
+                  No Risk
                 </div>
                 <div className="flex items-center gap-2">
                   <span className="inline-block w-3 h-3 md:w-4 md:h-4 rounded-sm" style={{ background: "#86efac" }} />
-                  0.2 – 0.4 · Less risk
+                  Less risk
                 </div>
                 <div className="flex items-center gap-2">
                   <span className="inline-block w-3 h-3 md:w-4 md:h-4 rounded-sm" style={{ background: "#fde047" }} />
-                  0.4 – 0.6 · Average risk
+                  Average risk
                 </div>
                 <div className="flex items-center gap-2">
                   <span className="inline-block w-3 h-3 md:w-4 md:h-4 rounded-sm" style={{ background: "#f59e0b" }} />
-                  0.6 – 0.8 · High risk
+                  High risk
                 </div>
                 <div className="flex items-center gap-2">
                   <span className="inline-block w-3 h-3 md:w-4 md:h-4 rounded-sm" style={{ background: "#ef4444" }} />
-                  0.8 – 1.0 · Highest risk
+                  Highest risk
                 </div>
               </div>
             </div>
@@ -587,8 +639,8 @@ export default function FloodDashboard() {
 
       {/* Download buttons — top-right desktop, bottom-center mobile */}
       {result && (
-        <div className="absolute z-30 md:top-20 md:right-4 top-auto bottom-4 left-0 right-0 md:left-auto flex md:items-end justify-center md:justify-end gap-2">
-          <div className="hidden md:block text-emerald-300 text-sm font-medium mr-1">Prediction complete</div>
+        <div className="absolute z-30 md:top-20 md:right-4 top-auto bottom-14 left-10 right-0 md:left-auto flex md:items-end justify-center md:justify-end gap-2">
+          <div className="hidden md:block text-emerald-300 text-sm font-medium mr-1"></div>
           <a
             href={result.png_url}
             target="_blank"
@@ -609,27 +661,28 @@ export default function FloodDashboard() {
       )}
 
       {/* Right-side round controls */}
-      <div className="absolute right-2 md:right-4 bottom-28 md:bottom-24 z-20 flex flex-col gap-2 md:gap-3">
-        <button className="p-3 rounded-full bg-white/90 hover:bg-white shadow-soft" title="Locate">
-          <Target size={18} />
-        </button>
-        <button
-          className="p-3 rounded-full bg-white/90 hover:bg-white shadow-soft"
-          title={`Basemap: ${basemap === "osm" ? "OSM" : basemap === "sat" ? "Satellite" : "Topo"}`}
-          onClick={() => setBasemap((b) => (b === "osm" ? "sat" : b === "sat" ? "topo" : "osm"))}
-        >
-          <Layers size={18} />
-        </button>
-        <button className="p-3 rounded-full bg-white/90 hover:bg-white shadow-soft" title="Help">
-          <HelpCircle size={18} />
-        </button>
-      </div>
+    <div className="absolute right-2 md:right-4 bottom-28 md:bottom-auto md:top-1/2 md:-translate-y-1/2 z-40 flex flex-col gap-2 md:gap-3 pointer-events-auto">
+      <button className="p-3 rounded-full bg-white/90 hover:bg-white shadow-soft" title="Locate">
+        <Target size={18} />
+      </button>
+      <button
+        className="p-3 rounded-full bg-white/90 hover:bg-white shadow-soft"
+        title={`Basemap: ${basemap === "osm" ? "OSM" : basemap === "sat" ? "Satellite" : "Topo"}`}
+        onClick={cycleBasemap}
+      >
+        <Layers size={18} />
+      </button>
+      <button className="p-3 rounded-full bg-white/90 hover:bg-white shadow-soft" title="Help">
+        <HelpCircle size={18} />
+      </button>
+    </div>
+
 
       {/* Upload AOI */}
-      <div className="absolute right-2 md:right-4 bottom-4 z-30">
+      <div className={`absolute bottom-14 left-2 right-30 md:right-42 md:left-10 md:bottom-14 ${result ? 'bottom-20 md:bottom-4' : 'bottom-11'} z-40`}>
         <button
           onClick={onUploadClick}
-          className="inline-flex items-center gap-2 px-3 md:px-4 py-2 rounded-md bg-slate-800/90 text-slate-100 hover:bg-slate-700 backdrop-blur text-xs md:text-sm"
+          className="inline-flex items-center gap-2 px-3 md:px-4 py-2 rounded-md bg-white text-slate-800 hover:bg-blue-100 shadow-soft text-xs md:text-sm"
           title="Upload AOI"
         >
           <Upload size={16} /> Upload AOI
@@ -645,10 +698,10 @@ export default function FloodDashboard() {
 
       {/* Bottom status bar (desktop only) */}
       <div className="absolute left-4 right-4 bottom-4 z-20 hidden lg:flex items-center justify-between text-slate-200">
-        <div className="text-sm opacity-80">Flood risk prototype - demo data. Replace with your model outputs.</div>
-        <button className="inline-flex items-center gap-2 px-4 py-2 rounded-md bg-slate-800/90 text-slate-100 hover:bg-slate-700">
+        <div className="text-sm opacity-80"></div>
+        {/* <button className="inline-flex items-center gap-2 px-4 py-2 rounded-md bg-slate-800/90 text-slate-100 hover:bg-slate-700">
           <Plus size={16} /> Add Layer
-        </button>
+        </button> */}
       </div>
     </section>
   );

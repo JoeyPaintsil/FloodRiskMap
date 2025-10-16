@@ -1,4 +1,13 @@
 # server/main.py
+#(in poweshell)
+# # Activate (again, just in case)
+#step1:  .\.venv\Scripts\Activate.ps1
+
+# Verify which Python you’re about to use
+# step2: python -c "import sys; print(sys.executable)"
+
+# step 3: .\.venv\Scripts\python.exe -m uvicorn server.main:app --host 0.0.0.0 --port 8000
+
 # Run locally: uvicorn server.main:app --host 0.0.0.0 --port 8000
 
 import os
