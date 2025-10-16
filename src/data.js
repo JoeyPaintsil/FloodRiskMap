@@ -5,7 +5,7 @@ export const profile = {
     "I’m a geospatial data scientist who works across remote sensing, GIS, and machine learning. I also design and develop websites and interactive geospatial dashboards that make data easy to explore and understand. If you share these interests, connect with me on LinkedIn below.",
   location: "Lisbon, Portugal",
   email: "paintsil610@gmail.com",
-  photo: "./public/joseph2.png",
+  photo: "joseph2.png",
   years: "5+",
   subhead: "Exploring data, maps, and technology to make complex information easier to see and use.",
   socials: [
@@ -18,11 +18,12 @@ export const profile = {
 
 
 export const stats = [
-  { value: "25+", label: "Projects Completed" },
-  { value: "6", label: "Countries Mapped" },
-  { value: "10TB+", label: "EO Data Processed" },
-  { value: "8+", label: "Models Deployed" }
+  { value: "4+", label: "Years of Experience" },
+  { value: "15+", label: "Machine Learning Models Built" },
+  { value: "50+", label: "Satellite Datasets Processed" },
+  { value: "20+", label: "Tools and Frameworks" },
 ];
+
 
 export const skills = [
   "Google Earth Engine", "Python", "NumPy", "Pandas", "Rasterio",
@@ -30,126 +31,179 @@ export const skills = [
   "ArcGIS Pro", "QGIS", "EO data: Sentinel, Landsat, NICFI Planet",
   "Cloud: GEE, GCP, AWS", "APIs", "Docker", "Git", "React"
 ]
-
 export const projects = [
   {
-    title: "Cocoa Agroforestry Classifier",
+    title: "Flood Risk Prediction Dashboard (Latest Project)",
     year: "2025",
-    tags: ["Earth Engine", "Random Forest", "Sentinel-2", "NICFI"],
-    description: "End-to-end pipeline mapping cocoa vs non-cocoa and shade intensity with wall-to-wall predictions and uncertainty.",
+    tags: ["EO", "ML", "Flood Risk", "Web GIS"],
+    description:
+      "An interactive machine learning dashboard for predicting and visualizing flood risk using Earth Observation data and spatial analytics.",
     links: [
-      { label: "Code", href: "#" },
-      { label: "Demo", href: "#" }
+      { label: "View Project", href: "#" }
     ]
   },
   {
-    title: "Global Flood Risk Prediction",
-    year: "2025",
-    tags: ["EO", "ML", "Hydrology", "GEE"],
-    description: "Model to predict flood risk globally using EO features and global training points.",
+    title: "Gmap Coordinate Converter",
+    year: "2022",
+    tags: ["Python", "GIS", "Automation"],
+    description:
+      "A Python application that converts Ghanaian local coordinates to WGS84 and automatically plots them in Google Earth.",
     links: [
-      { label: "Paper", href: "#" },
-      { label: "Slides", href: "#" }
+      { label: "View Project", href: "https://github.com/JoeyPaintsil" }
     ]
   },
   {
-    title: "Above-ground Biomass & CO2e",
-    year: "2024",
-    tags: ["GEDI", "Sentinel-1/2", "PALSAR", "Carbon Accounting"],
-    description: "AGBD to carbon and CO2e reporting aligned with GHG protocol with uncertainty estimates.",
+    title: "JoeLocator",
+    year: "2021",
+    tags: ["Web GIS", "Leaflet", "JavaScript"],
+    description:
+      "A web app that allows users to search and locate nearby amenities within a defined radius and download location data for analysis.",
     links: [
-      { label: "Report", href: "#" }
+      { label: "View Project", href: "https://joeypaintsil.github.io/JoeLocator/" }
+    ]
+  },
+  {
+    title: "Restaurant Finder",
+    year: "2021",
+    tags: ["Python", "Database", "HTML", "Leaflet"],
+    description:
+      "A student-focused web app that locates restaurants within 500m of campus using Google Maps API and database integration.",
+    links: [
+      { label: "View Project", href: "https://github.com/geotech-programming-project/restaurante-finder-final" }
     ]
   }
-]
+];
 
 export const experience = [
   {
     org: "Abeya",
     role: "Remote Sensing Data Scientist",
-    period: "April 2024 - Present",
+    period: "April 2025 – Present",
     bullets: [
-      "Built EO pipelines in GEE for classification and biomass mapping",
-      "Delivered dashboards and reproducible analysis for clients",
-      "Optimized data flows and cloud exports to GCS/S3"
+      "Processing and analyzing satellite imagery for environmental and spatial insights.",
+      "Developing reproducible workflows in Earth Observation and Machine Learning.",
+      "Collaborating across teams to deliver accurate and timely geospatial products."
     ]
   },
   {
-    org: "TechFides LLC",
-    role: "Manager, Gov & Nonprofit Ops",
-    period: "2024 — Present",
+    org: "Licensed Professional Surveyor (Mr. Jonas Aryan Paintsil)",
+    role: "Geomatic Engineer",
+    period: "September 2022 – August 2023",
     bullets: [
-      "Led process improvement and analytics initiatives",
-      "Managed bids, RFPs, and research deliverables"
+      "Processed satellite imagery and produced thematic and topographic maps using ArcGIS.",
+      "Conducted cadastral and engineering surveys ensuring spatial accuracy and data quality.",
+      "Performed GNSS data collection and analysis for geospatial accuracy improvement.",
+      "Used Python and Excel for survey computations and workflow automation."
+    ]
+  },
+  {
+    org: "Lands Commission",
+    role: "Geomatic Engineer",
+    period: "October 2021 – September 2022",
+    bullets: [
+      "Designed Python applications to automate coordinate conversion and mapping tasks.",
+      "Processed remote sensing imagery for vegetation and land-use analyses.",
+      "Supported data management and spatial analysis for cadastral and mapping projects.",
+      "Contributed to digital transformation and process efficiency initiatives."
+    ]
+  },
+  {
+    org: "Licensed Professional Surveyor (Mr. Jonas Aryan Paintsil)",
+    role: "Intern",
+    period: "May 2020 – December 2020",
+    bullets: [
+      "Produced high-resolution orthophoto maps using LiDAR and drone data.",
+      "Assisted in data acquisition, field surveying, and map production for infrastructure projects.",
+      "Applied AutoCAD and ArcGIS for spatial data analysis and visualization."
     ]
   }
-]
+];
 
 export const services = [
   {
-    title: "Web GIS & Dashboards",
-    desc: "Operational web maps and dashboards with React, MapLibre/Leaflet, and cloud tiles.",
+    title: "Web GIS Dashboards",
+    desc: "Interactive spatial dashboards and map interfaces built with React and MapLibre.",
     icon: "Map"
   },
   {
-    title: "EO Pipelines & ML",
-    desc: "End-to-end Earth Engine and Python pipelines for classification, change, biomass.",
-    icon: "Cpu"
-  },
-  {
-    title: "APIs & Data Products",
-    desc: "Clean, versioned spatial APIs and reproducible data products for teams.",
+    title: "Web Development",
+    desc: "Modern, responsive web apps using React, Tailwind CSS, and JavaScript frameworks.",
     icon: "Server"
   },
   {
-    title: "Risk & Monitoring",
-    desc: "Flood, deforestation, crops, and custom monitoring with alerting and reports.",
+    title: "EO & ML Pipelines",
+    desc: "Python and Earth Engine workflows for analysis, modelling, and prediction.",
+    icon: "Cpu"
+  },
+  {
+    title: "Remote Sensing",
+    desc: "Processing and visualization of satellite imagery for mapping and analytics.",
     icon: "BarChart3"
   }
-]
+];
+
 
 // src/data.js
 export const skillCategories = [
   {
-    name: "Core GIS",
+    name: "GIS & Surveying",
     items: [
       { name: "Google Earth Engine", icon: "Globe2" },
+      { name: "ArcGIS Pro", icon: "Layers" },
       { name: "QGIS", icon: "Map" },
-      { name: "ArcGIS Pro", icon: "Layers" }
+      { name: "PostGIS / PostgreSQL", icon: "Database" },
+      { name: "Leaflet / MapLibre", icon: "MapPinned" },
+      { name: "AutoCAD", icon: "Ruler" },
+      { name: "GNSS Processing (Topcon Tools)", icon: "Navigation" }
     ]
   },
   {
-    name: "Python & Data",
-    items: [
-      { name: "Python", icon: "Code2" },
-      { name: "NumPy", icon: "FunctionSquare" },
-      { name: "Pandas", icon: "Table" },
-      { name: "Rasterio", icon: "Image" },
-      { name: "GeoPandas", icon: "MapPin" },
-      { name: "xarray", icon: "Box" }
-    ]
-  },
-  {
-    name: "EO & ML",
-    items: [
-      { name: "Sentinel-1/2", icon: "Satellite" },
-      { name: "Landsat", icon: "Image" },
-      { name: "NICFI Planet", icon: "Globe" },
-      { name: "Scikit-learn", icon: "BrainCircuit" },
-      { name: "SHAP", icon: "BarChart3" }
-    ]
-  },
-  {
-    name: "Cloud & Apps",
+    name: "Web Development",
     items: [
       { name: "React", icon: "Cpu" },
-      { name: "MapLibre/Leaflet", icon: "MapPinned" },
+      { name: "Tailwind CSS", icon: "Brush" },
+      { name: "JavaScript", icon: "Code2" },
+      { name: "HTML / CSS", icon: "FileCode" },
+      { name: "Node.js", icon: "Network" },
+      { name: "Flask / Express.js", icon: "Server" },
+      { name: "FastAPI", icon: "ServerCog" },
+      { name: "Docker", icon: "Boxes" },
       { name: "GCP", icon: "Cloud" },
-      { name: "AWS", icon: "Server" },
-      { name: "Docker", icon: "Boxes" }
+      { name: "Git & GitHub", icon: "GitBranch" },
+      { name: "VS Code / PyCharm", icon: "Laptop" }
+    ]
+  },
+  {
+    name: "EO & Machine Learning",
+    items: [
+      { name: "Sentinel-1 / 2", icon: "Satellite" },
+      { name: "Landsat", icon: "Image" },
+      { name: "Scikit-learn", icon: "BrainCircuit" },
+      { name: "XGBoost", icon: "BarChart3" },
+      { name: "Random Forest", icon: "TreePine" },
+      { name: "Rasterio", icon: "Image" },
+      { name: "xarray", icon: "Box" },
+      { name: "Remote Sensing Analysis", icon: "Radar" }
+    ]
+  },
+  {
+    name: "Python & Data Science",
+    items: [
+      { name: "Python", icon: "Code" },
+      { name: "Pandas", icon: "Table" },
+      { name: "NumPy", icon: "FunctionSquare" },
+      { name: "GeoPandas", icon: "MapPin" },
+      { name: "Matplotlib", icon: "BarChartBig" },
+      { name: "Plotly", icon: "ChartSpline" },
+      { name: "SQL", icon: "Database" },
+      { name: "ETL & Automation Scripts", icon: "Cog" },
+      { name: "Jupyter Notebook", icon: "Notebook" },
+      { name: "Excel", icon: "Sheet" }
     ]
   }
 ];
+
+
 
 export const certifications = [
   "Esri Training: Spatial Analysis",

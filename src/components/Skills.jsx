@@ -7,8 +7,8 @@ export default function Skills() {
       <div className="container-xl">
         <div className="text-center mb-10">
           <div className="inline-flex items-center gap-2">
-            <div className="h-[2px] w-6 bg-brandOrange-500"></div>
-            <span className="text-sm font-semibold text-brandOrange-600">Skills</span>
+            <div className="h-[2px] w-6 bg-brand-500"></div>
+            <span className="text-sm font-semibold text-brand-600">Skills</span>
           </div>
           <h2 className="mt-4 text-4xl md:text-5xl font-extrabold">My Professional Toolkit</h2>
         </div>
@@ -23,7 +23,7 @@ export default function Skills() {
                   const Icon = Icons[skill.icon] || Icons.Circle;
                   return (
                     <div key={skill.name} className="flex items-center gap-2">
-                      <Icon size={18} className="text-brandOrange-600" />
+                      <Icon size={18} className="text-brand-600" />
                       <span>{skill.name}</span>
                     </div>
                   );
@@ -34,7 +34,7 @@ export default function Skills() {
         </div>
 
         {/* Extras */}
-        <div className="mt-10 grid md:grid-cols-2 gap-6">
+        {/* <div className="mt-10 grid md:grid-cols-2 gap-6">
           <div className="card p-6">
             <h4 className="text-lg font-semibold mb-3">Certifications</h4>
             <div className="flex flex-wrap gap-2">
@@ -51,7 +51,7 @@ export default function Skills() {
               ))}
             </div>
           </div>
-        </div>
+        </div> */}
       </div>
     </section>
   );

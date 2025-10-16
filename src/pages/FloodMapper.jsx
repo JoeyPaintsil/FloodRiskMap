@@ -31,7 +31,7 @@ export default function FloodMapper() {
           {/* Right: text */}
           <div>
             <h1 className="text-4xl md:text-5xl font-extrabold mb-4 text-brand-700">
-              Flood Mapper
+              Flood JoeMapper
             </h1>
             <p className="text-lg text-slate-700 mb-6">
               An automated system that predicts flood-prone areas using global Earth

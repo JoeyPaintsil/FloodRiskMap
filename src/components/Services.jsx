@@ -10,10 +10,10 @@ export default function Services(){
         {/* Section pretitle + title */}
         <div className="text-center mb-10">
           <div className="inline-flex items-center gap-2">
-            <div className="h-[2px] w-6 bg-brandOrange-500"></div>
-            <span className="text-sm font-semibold text-brandOrange-600">Check Services</span>
+            <div className="h-[2px] w-6 bg-brandBlue-500"></div>
+            <span className="text-sm font-semibold text-brand-600">Core Expertise</span>
           </div>
-          <h2 className="mt-4 text-4xl md:text-5xl font-extrabold">My Best Services</h2>
+          <h2 className="mt-4 text-4xl md:text-5xl font-extrabold">Focus Areas</h2>
         </div>
 
         {/* Cards */}
@@ -25,7 +25,7 @@ export default function Services(){
                 {/* Icon + soft circle */}
                 <div className="relative mb-6">
                   <div className="absolute left-2 top-1 h-10 w-10 rounded-full bg-slate-200/50" />
-                  <Icon className="relative z-10 text-brandOrange-600" size={36} />
+                  <Icon className="relative z-10 text-brand-600" size={36} />
                 </div>
 
                 <h3 className="text-xl font-semibold mb-2">{s.title}</h3>
@@ -34,8 +34,8 @@ export default function Services(){
                 {/* Bottom arrow button */}
                 <div className="mt-auto">
                   <a
-                    href="#contact"
-                    className="inline-flex items-center gap-2 rounded-md px-3 py-2 bg-slate-200 text-slate-700 group-hover:bg-brandOrange-500 group-hover:text-white transition"
+                    href="#projects"
+                    className="inline-flex items-center gap-2 rounded-md px-3 py-2 bg-slate-200 text-slate-700 group-hover:bg-brand-500 group-hover:text-white transition"
                   >
                     <ArrowRight size={16} />
                   </a>
