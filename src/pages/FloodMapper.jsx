@@ -1,6 +1,6 @@
 // src/pages/FloodMapper.jsx
 import { Link } from "react-router-dom";
-import { ArrowLeft, BarChart3 } from "lucide-react";
+import { ArrowLeft, BarChart3, Search, Upload, Brain, Download } from "lucide-react";
 
 export default function FloodMapper() {
   return (
@@ -22,7 +22,7 @@ export default function FloodMapper() {
           {/* Left: image */}
           <div className="card overflow-hidden">
             <img
-              src="/hero-map.png"  /* replace with a flood image or map screenshot */
+              src="/flood_map.jpg"
               alt="Flood risk map preview"
               className="w-full h-full object-cover"
             />
@@ -34,23 +34,27 @@ export default function FloodMapper() {
               Flood JoeMapper
             </h1>
             <p className="text-lg text-slate-700 mb-6">
-              An automated system that predicts flood-prone areas using global Earth
-              observation data and machine learning, so planners can act before waters rise.
+              Flooding is one of the most frequent and damaging natural hazards worldwide, 
+              affecting millions of people and causing massive economic losses.{" "}
+              <strong>Flood JoeMapper</strong> helps decision-makers identify and predict flood-prone 
+              regions anywhere in the world using Earth observation data and machine learning.
             </p>
 
             <ul className="space-y-3 text-slate-700 mb-8">
               <li className="pl-2">
-                • <strong>1.81 billion people</strong> live in areas exposed to
-                significant flooding in a 1-in-100-year event, most in low- and middle-income
-                countries. <span className="text-slate-500 text-sm">(World Bank)</span>
+                • <strong>1.81 billion people</strong> live in areas exposed to significant flooding in a 
+                1-in-100-year event, most in low- and middle-income countries.{" "}
+                <span className="text-slate-500 text-sm">(World Bank)</span>
               </li>
               <li className="pl-2">
-                • Global flood exposure has been rising for decades, with the largest losses in Asia. 
-                <span className="text-slate-500 text-sm"> (UNDRR)</span>
+                • Climate variability and rapid urban growth have increased exposure and vulnerability 
+                in many low- and middle-income regions.{" "}
+                <span className="text-slate-500 text-sm">(UNDRR)</span>
               </li>
               <li className="pl-2">
-                • Disasters push <strong>~26 million people into poverty each year</strong> — floods and storms are major drivers. 
-                <span className="text-slate-500 text-sm"> (World Bank)</span>
+                • Flood risk prediction tools like <strong>Flood JoeMapper</strong> enable faster preparedness, 
+                improved resource allocation, and better mitigation strategies before disaster strikes.{" "}
+                <span className="text-slate-500 text-sm">(World Bank)</span>
               </li>
             </ul>
 
@@ -64,7 +68,70 @@ export default function FloodMapper() {
           </div>
         </div>
 
-        {/* Keep the rest of your page (features, preview, contact CTA) below if you like */}
+        {/* How the Dashboard Works */}
+        <section aria-labelledby="how-it-works">
+          <h2 id="how-it-works" className="text-2xl md:text-3xl font-bold mb-6">
+            How the Dashboard Works
+          </h2>
+
+          <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+            {/* 1 */}
+            <div className="card p-5">
+              <div className="flex items-center gap-3 mb-3">
+                <span className="inline-flex h-8 w-8 items-center justify-center rounded-full bg-blue-100 text-blue-700 font-semibold">1</span>
+                <span className="text-slate-800 font-medium">Choose Your Area</span>
+              </div>
+              <div className="flex items-center gap-2 text-blue-600 mb-2">
+                <Search size={18} /> <Upload size={18} />
+              </div>
+              <p className="text-slate-600 text-sm">
+                Search by place name or upload a <code>.geojson</code> file to set your Area of Interest (AOI).
+              </p>
+            </div>
+
+            {/* 2 */}
+            <div className="card p-5">
+              <div className="flex items-center gap-3 mb-3">
+                <span className="inline-flex h-8 w-8 items-center justify-center rounded-full bg-blue-100 text-blue-700 font-semibold">2</span>
+                <span className="text-slate-800 font-medium">Run Prediction</span>
+              </div>
+              <div className="flex items-center gap-2 text-blue-600 mb-2">
+                <BarChart3 size={18} />
+              </div>
+              <p className="text-slate-600 text-sm">
+                Click <strong>Predict Flood Risk</strong>. The system prepares inputs and starts the analysis for your AOI.
+              </p>
+            </div>
+
+            {/* 3 */}
+            <div className="card p-5">
+              <div className="flex items-center gap-3 mb-3">
+                <span className="inline-flex h-8 w-8 items-center justify-center rounded-full bg-blue-100 text-blue-700 font-semibold">3</span>
+                <span className="text-slate-800 font-medium">Model & Results</span>
+              </div>
+              <div className="flex items-center gap-2 text-blue-600 mb-2">
+                <Brain size={18} />
+              </div>
+              <p className="text-slate-600 text-sm">
+                Behind the scenes, ML models combine EO data and terrain factors to map areas with higher flood risk within your AOI.
+              </p>
+            </div>
+
+            {/* 4 */}
+            <div className="card p-5">
+              <div className="flex items-center gap-3 mb-3">
+                <span className="inline-flex h-8 w-8 items-center justify-center rounded-full bg-blue-100 text-blue-700 font-semibold">4</span>
+                <span className="text-slate-800 font-medium">Download Your Map</span>
+              </div>
+              <div className="flex items-center gap-2 text-blue-600 mb-2">
+                <Download size={18} />
+              </div>
+              <p className="text-slate-600 text-sm">
+                Export the flood risk map as <code>.png</code> or GeoTIFF (<code>.tif</code>) and continue analysis in GIS tools like ArcGIS or QGIS.
+              </p>
+            </div>
+          </div>
+        </section>
       </div>
     </section>
   );

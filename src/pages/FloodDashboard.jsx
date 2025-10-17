@@ -3,7 +3,6 @@ import { useEffect, useRef, useState } from "react";
 import maplibregl from "maplibre-gl";
 import {
   Layers,
-  Target,
   HelpCircle,
   Upload,
   Plus,
@@ -12,6 +11,7 @@ import {
   Download,
   Eye,
   EyeOff,
+  Linkedin
 } from "lucide-react";
 import { Link } from "react-router-dom";
 
@@ -57,6 +57,7 @@ export default function FloodDashboard() {
 
   // Basemap
   const [basemap, setBasemap] = useState("osm"); // 'osm' | 'sat' | 'topo'
+  const [showBasemapMenu, setShowBasemapMenu] = useState(false); // basemap picker
 
   // ---------------- Map init ----------------
   useEffect(() => {
@@ -73,7 +74,6 @@ export default function FloodDashboard() {
 
     mapInstanceRef.current = map;
     return () => map.remove();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   // Basemap switcher (rebuild style but keep overlays)
@@ -199,7 +199,7 @@ export default function FloodDashboard() {
       const map = mapInstanceRef.current;
       if (!map) return;
 
-    // Uploaded AOI takes precedence; clear named-area selection
+      // Uploaded AOI takes precedence; clear named-area selection
       aoiGeoJsonRef.current = geo;
       selectedAreaRef.current = null;
 
@@ -433,50 +433,39 @@ export default function FloodDashboard() {
     setFloodVisible(!floodVisible);
   };
 
-  // Cycle basemap
-  const cycleBasemap = () =>
-    setBasemap((b) => (b === "osm" ? "sat" : b === "sat" ? "topo" : "osm"));
+  // Set basemap from menu
+  const chooseBasemap = (b) => {
+    setBasemap(b);
+    setShowBasemapMenu(false);
+  };
 
   // -------- Progress text rotation (every 10s while running) --------
-  // useEffect(() => {
-  //   if (status !== "running") return;
-  //   const msgs = ["Fetching Flood Parameters...", "Training Machine Learning Model...", "Determining AOI...", "Predicting Flood Risk..."];
-  //   let i = 0;
-  //   setStep(msgs[i]);
-  //   const iv = setInterval(() => {
-  //     i = (i + 1) % msgs.length;
-  //     setStep(msgs[i]);
-  //   }, 10000);
-  //   return () => clearInterval(iv);
-  // }, [status]);
-
   useEffect(() => {
-  if (status !== "running") return;
+    if (status !== "running") return;
 
-  const msgs = [
-    "Fetching Flood Parameters...",
-    "Training Machine Learning Model...",
-    "Determining AOI...",
-    "Predicting Flood Risk..."
-  ];
+    const msgs = [
+      "Fetching Flood Parameters...",
+      "Training Machine Learning Model...",
+      "Determining AOI...",
+      "Predicting Flood Risk..."
+    ];
 
-  let i = 0;
-  setStep(msgs[i]);
+    let i = 0;
+    setStep(msgs[i]);
 
-  const iv = setInterval(() => {
-    i += 1;
+    const iv = setInterval(() => {
+      i += 1;
 
-    // If we reached the last message, set it and stop the interval
-    if (i >= msgs.length - 1) {
-      setStep(msgs[msgs.length - 1]);
-      clearInterval(iv);
-    } else {
-      setStep(msgs[i]);
-    }
-  }, 10000);
+      if (i >= msgs.length - 1) {
+        setStep(msgs[msgs.length - 1]);
+        clearInterval(iv);
+      } else {
+        setStep(msgs[i]);
+      }
+    }, 10000);
 
-  return () => clearInterval(iv);
-}, [status]);
+    return () => clearInterval(iv);
+  }, [status]);
 
   return (
     <section className="relative h-[100vh] bg-slate-900">
@@ -553,8 +542,8 @@ export default function FloodDashboard() {
             )}
           </div>
 
-          {/* Predict */}
-          <div className="order-3">
+          {/* Predict + hint text to the right */}
+          <div className="order-3 flex items-center gap-2">
             <button
               onClick={onPredict}
               disabled={status === "running"}
@@ -562,13 +551,16 @@ export default function FloodDashboard() {
             >
               Predict Flood Risk
             </button>
+            <span className="text-[11px] md:text-sm text-white/90 bg-slate-800/70 rounded px-2 py-1">
+              Use the ? button to report any bugs/errors
+            </span>
           </div>
         </div>
       </div>
 
-      {/* Progress pill — small; no fullscreen overlay */}
+      {/* Progress pill — bring to front */}
       {(status === "running" || status === "done") && (
-        <div className="pointer-events-none absolute md:top-20 top-auto bottom-24 left-1/2 -translate-x-1/2 z-30">
+        <div className="pointer-events-none absolute md:top-20 top-auto bottom-24 left-1/2 -translate-x-1/2 z-50">
           <div className="bg-slate-800/95 text-white px-3 md:px-4 py-2 rounded-lg shadow-soft flex items-center gap-3 md:gap-4 max-w-[min(90vw,520px)]">
             {status === "running" ? (
               <>
@@ -590,7 +582,7 @@ export default function FloodDashboard() {
         </div>
       )}
 
-            {/* Legend + toggle — left-top desktop, bottom-left mobile */}
+      {/* Legend + toggle — left-top desktop, bottom-left mobile */}
       {result && (
         <div className="absolute z-30 md:left-4 md:top-24 left-2 right-auto top-auto bottom-36">
           <div className="flex md:flex-col gap-2">
@@ -623,10 +615,10 @@ export default function FloodDashboard() {
               </div>
             </div>
 
-            {/* Show/Hide button (unchanged) */}
+            {/* Show/Hide button — half-height on mobile */}
             <button
               onClick={toggleFloodLayer}
-              className="inline-flex items-center gap-2 px-3 py-2 rounded-md bg-white text-slate-800 shadow-soft text-xs md:text-sm"
+              className="inline-flex items-center gap-2 px-2 py-1 md:px-3 md:py-2 rounded-md bg-white text-slate-800 shadow-soft text-[10px] md:text-sm"
               title={floodVisible ? "Hide Flood Layer" : "Show Flood Layer"}
             >
               {floodVisible ? <EyeOff size={16} /> : <Eye size={16} />}{" "}
@@ -636,11 +628,65 @@ export default function FloodDashboard() {
         </div>
       )}
 
+      {/* Right-side round controls */}
+      <div className="absolute right-2 md:right-4 bottom-28 md:bottom-auto md:top-1/2 md:-translate-y-1/2 z-40 flex flex-col gap-2 md:gap-3 pointer-events-auto">
+        {/* Basemap (toggles menu) */}
+        <button
+          className="relative p-3 rounded-full bg-white/90 hover:bg-white shadow-soft"
+          title={`Basemap: ${basemap === "osm" ? "OSM" : basemap === "sat" ? "Satellite" : "Topo"}`}
+          onClick={() => setShowBasemapMenu((v) => !v)}
+        >
+          <Layers size={18} />
+          {showBasemapMenu && (
+            <div className="absolute right-12 top-1/2 -translate-y-1/2 bg-white rounded-md shadow-soft text-sm">
+              <button onClick={() => chooseBasemap("osm")} className="block w-full text-left px-3 py-2 hover:bg-slate-100">OpenStreetMap</button>
+              <button onClick={() => chooseBasemap("sat")} className="block w-full text-left px-3 py-2 hover:bg-slate-100">Satellite</button>
+              <button onClick={() => chooseBasemap("topo")} className="block w-full text-left px-3 py-2 hover:bg-slate-100">Topographic</button>
+            </div>
+          )}
+        </button>
 
-      {/* Download buttons — top-right desktop, bottom-center mobile */}
+        {/* Help goes to Contact on homepage */}
+        <Link
+          to="/#contact"
+          className="p-3 rounded-full bg-white/90 hover:bg-white shadow-soft"
+          title="Help / Contact"
+        >
+          <HelpCircle size={18} />
+        </Link>
+      </div>
+
+      {/* Bottom-left stack: LinkedIn (blue) always on top, then Upload AOI */}
+      <div className="absolute bottom-14 left-2 z-40 flex flex-col gap-2">
+        <a
+          href="https://www.linkedin.com/in/joseph-paintsil/"
+          target="_blank"
+          rel="noreferrer"
+          className="inline-flex items-center gap-2 px-3 md:px-4 py-2 rounded-md bg-blue-600 text-white hover:bg-blue-700 shadow-soft text-xs md:text-sm"
+          title="Let's Connect on LinkedIn"
+        >
+          <Linkedin size={16} /> Let’s Connect on LinkedIn
+        </a>
+
+        <button
+          onClick={onUploadClick}
+          className="inline-flex items-center gap-2 px-3 md:px-4 py-2 rounded-md bg-white text-slate-800 hover:bg-blue-100 shadow-soft text-xs md:text-sm"
+          title="Upload AOI"
+        >
+          <Upload size={16} /> Upload AOI
+        </button>
+        <input
+          ref={fileRef}
+          type="file"
+          accept=".geojson,.json"
+          className="hidden"
+          onChange={onFileChosen}
+        />
+      </div>
+
+      {/* Download buttons — move to bottom-right on mobile to avoid overlap */}
       {result && (
-        <div className="absolute z-30 md:top-20 md:right-4 top-auto bottom-14 left-10 right-0 md:left-auto flex md:items-end justify-center md:justify-end gap-2">
-          <div className="hidden md:block text-emerald-300 text-sm font-medium mr-1"></div>
+        <div className="absolute z-30 md:top-36 right-2 md:right-4 top-auto bottom-14 flex items-end justify-end gap-2">
           <a
             href={result.png_url}
             target="_blank"
@@ -659,42 +705,6 @@ export default function FloodDashboard() {
           </a>
         </div>
       )}
-
-      {/* Right-side round controls */}
-    <div className="absolute right-2 md:right-4 bottom-28 md:bottom-auto md:top-1/2 md:-translate-y-1/2 z-40 flex flex-col gap-2 md:gap-3 pointer-events-auto">
-      <button className="p-3 rounded-full bg-white/90 hover:bg-white shadow-soft" title="Locate">
-        <Target size={18} />
-      </button>
-      <button
-        className="p-3 rounded-full bg-white/90 hover:bg-white shadow-soft"
-        title={`Basemap: ${basemap === "osm" ? "OSM" : basemap === "sat" ? "Satellite" : "Topo"}`}
-        onClick={cycleBasemap}
-      >
-        <Layers size={18} />
-      </button>
-      <button className="p-3 rounded-full bg-white/90 hover:bg-white shadow-soft" title="Help">
-        <HelpCircle size={18} />
-      </button>
-    </div>
-
-
-      {/* Upload AOI */}
-      <div className={`absolute bottom-14 left-2 right-30 md:right-42 md:left-10 md:bottom-14 ${result ? 'bottom-20 md:bottom-4' : 'bottom-11'} z-40`}>
-        <button
-          onClick={onUploadClick}
-          className="inline-flex items-center gap-2 px-3 md:px-4 py-2 rounded-md bg-white text-slate-800 hover:bg-blue-100 shadow-soft text-xs md:text-sm"
-          title="Upload AOI"
-        >
-          <Upload size={16} /> Upload AOI
-        </button>
-        <input
-          ref={fileRef}
-          type="file"
-          accept=".geojson,.json"
-          className="hidden"
-          onChange={onFileChosen}
-        />
-      </div>
 
       {/* Bottom status bar (desktop only) */}
       <div className="absolute left-4 right-4 bottom-4 z-20 hidden lg:flex items-center justify-between text-slate-200">

@@ -1,3 +1,6 @@
+
+import { useEffect } from "react";
+
 // src/App.jsx
 import { Routes, Route, useLocation } from "react-router-dom";
 import Navbar from "./components/Navbar";
@@ -14,6 +17,18 @@ import FloodDashboard from "./pages/FloodDashboard";
 
 export default function App() {
   const location = useLocation();
+  useEffect(() => {
+  if (location.hash === "#contact") {
+    // Wait for components to load, then scroll
+    setTimeout(() => {
+      const contactSection = document.getElementById("contact");
+      if (contactSection) {
+        contactSection.scrollIntoView({ behavior: "smooth" });
+      }
+    }, 200);
+  }
+}, [location]);
+
 
   // Pages where Navbar/Footer should be hidden
   const isDashboard = location.pathname.startsWith("/flood-mapper");
