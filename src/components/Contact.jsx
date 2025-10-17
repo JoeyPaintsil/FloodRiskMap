@@ -1,7 +1,7 @@
 // src/components/Contact.jsx
 import { useState } from "react";
 
-const SCRIPT_URL = import.meta.env.VITE_CONTACT_FORM_SCRIPT_URL;// <-- from Apps Script deployment
+const SCRIPT_URL = "https://script.google.com/macros/s/AKfycby6gUxDKQlKc5iTUWMrpJBf6Yv56z39eeyro2GYyrBaBfsqRbg8KbKn_qnCTnFSx7pI4A/exec";// <-- from Apps Script deployment
 
 export default function Contact() {
   const [form, setForm] = useState({
